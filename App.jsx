@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -163,13 +163,10 @@ function ResidentRow({ resident, onChange, onRemove }) {
 function AddressCard({ address, onRemove, onResidentsChange }) {
   const [open, setOpen] = useState(true)
   const [residents, setResidents] = useState(address.residents || [])
-  const debounceRef = useRef(null)
+  const [street, setStreet] = useState(address.street || "")
 
-  const saveStreet = (val) => {
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
+  const saveStreet = async (val) => {
       supabase.from('addresses').update({ street: val }).eq('id', address.id)
-    }, 600)
   }
 
   const addResident = async () => {
@@ -213,8 +210,9 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
         <span style={{ fontSize: '18px', flexShrink: 0 }}>🏡</span>
         <input
           placeholder="Street Address (e.g. 123 Maple Lane)"
-          defaultValue={address.street}
-          onChange={e => saveStreet(e.target.value)}
+          value={street}
+          onChange={e => { e.stopPropagation(); setStreet(e.target.value) }}
+          onBlur={e => saveStreet(e.target.value)}
           onClick={e => e.stopPropagation()}
           style={{
             ...inputStyle, flex: 1,
