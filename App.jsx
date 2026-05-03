@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
   pine:      '#2D5016',
   sage:      '#4A7C3F',
@@ -33,7 +32,6 @@ const iconBtn = (extra = {}) => ({
   ...extra,
 })
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
 const TreeIcon = ({ size = 32 }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
     <polygon points="16,2 26,18 6,18" fill={C.sage} />
@@ -62,7 +60,6 @@ const PersonIcon = () => (
   </svg>
 )
 
-// ── Password Gate ─────────────────────────────────────────────────────────────
 function PasswordGate({ onUnlock }) {
   const [pw, setPw] = useState('')
   const [err, setErr] = useState(false)
@@ -81,10 +78,7 @@ function PasswordGate({ onUnlock }) {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: C.bg,
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
       <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
       <div style={{
         background: '#fff', borderRadius: '18px', padding: '44px 40px',
@@ -110,17 +104,12 @@ function PasswordGate({ onUnlock }) {
           onKeyDown={e => e.key === 'Enter' && attempt()}
           style={{ ...inputStyle, fontSize: '15px', padding: '11px 14px', marginBottom: '10px' }}
         />
-        {err && (
-          <p style={{ color: C.red, fontSize: '12px', marginBottom: '10px' }}>
-            Incorrect password — please try again.
-          </p>
-        )}
+        {err && <p style={{ color: C.red, fontSize: '12px', marginBottom: '10px' }}>Incorrect password — please try again.</p>}
         <button onClick={attempt} style={{
           width: '100%', background: C.pine, color: '#fff', border: 'none',
           borderRadius: '10px', padding: '13px', fontSize: '14px',
           fontFamily: "'Lato', sans-serif", fontWeight: '700',
-          cursor: 'pointer', letterSpacing: '0.04em',
-          transition: 'background 0.2s',
+          cursor: 'pointer', letterSpacing: '0.04em', transition: 'background 0.2s',
         }}
           onMouseEnter={e => e.currentTarget.style.background = C.sage}
           onMouseLeave={e => e.currentTarget.style.background = C.pine}
@@ -135,12 +124,9 @@ function PasswordGate({ onUnlock }) {
   )
 }
 
-// ── Resident row ──────────────────────────────────────────────────────────────
-function ResidentRow({ resident, onChange, onRemove }) {
+function ResidentRow({ resident, onRemove }) {
   const save = (field) => async (e) => {
-    const val = e.target.value
-    onChange({ ...resident, [field]: val })
-    await supabase.from('residents').update({ [field]: val }).eq('id', resident.id)
+    await supabase.from('residents').update({ [field]: e.target.value }).eq('id', resident.id)
   }
 
   return (
@@ -159,14 +145,20 @@ function ResidentRow({ resident, onChange, onRemove }) {
   )
 }
 
-// ── Address card ──────────────────────────────────────────────────────────────
 function AddressCard({ address, onRemove, onResidentsChange }) {
   const [open, setOpen] = useState(true)
   const [residents, setResidents] = useState(address.residents || [])
-  const [street, setStreet] = useState(address.street || "")
+  const [street, setStreet] = useState(address.street || '')
+  const [saved, setSaved] = useState(true)
 
-  const saveStreet = async (val) => {
-      supabase.from('addresses').update({ street: val }).eq('id', address.id)
+  const handleStreetChange = (val) => {
+    setStreet(val)
+    setSaved(false)
+  }
+
+  const saveStreet = async () => {
+    const { error } = await supabase.from('addresses').update({ street }).eq('id', address.id)
+    if (!error) setSaved(true)
   }
 
   const addResident = async () => {
@@ -182,12 +174,6 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
     }
   }
 
-  const updateResident = (id, val) => {
-    const updated = residents.map(r => r.id === id ? val : r)
-    setResidents(updated)
-    onResidentsChange(address.id, updated)
-  }
-
   const removeResident = async (id) => {
     await supabase.from('residents').delete().eq('id', id)
     const updated = residents.filter(r => r.id !== id)
@@ -201,35 +187,42 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
       borderRadius: '12px', marginBottom: '14px', overflow: 'hidden',
       boxShadow: '0 2px 10px rgba(45,80,22,0.07)',
     }}>
-      {/* Card header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '12px 16px', background: C.lightSage,
-        cursor: 'pointer', userSelect: 'none',
-      }} onClick={() => setOpen(o => !o)}>
-        <span style={{ fontSize: '18px', flexShrink: 0 }}>🏡</span>
-        <input
-          placeholder="Street Address (e.g. 123 Maple Lane)"
-          value={street}
-          onChange={e => { e.stopPropagation(); setStreet(e.target.value) }}
-          onBlur={e => saveStreet(e.target.value)}
-          onClick={e => e.stopPropagation()}
-          style={{
-            ...inputStyle, flex: 1,
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '15px', fontWeight: '600', color: C.pine,
-            background: 'transparent', border: 'none',
-            borderBottom: `1.5px solid ${C.sage}`, borderRadius: 0, padding: '2px 6px',
-          }}
-        />
-        <ChevronIcon open={open} />
-        <button
-          onClick={e => { e.stopPropagation(); onRemove() }}
-          style={iconBtn({ color: C.red })}
-          title="Remove address"
-        >
-          <TrashIcon />
-        </button>
+      {/* Address input row - NOT inside the collapse toggle */}
+      <div style={{ background: C.lightSage, padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px', flexShrink: 0 }}>🏡</span>
+          <input
+            placeholder="Street Address (e.g. 123 Maple Lane)"
+            value={street}
+            onChange={e => handleStreetChange(e.target.value)}
+            style={{
+              ...inputStyle, flex: 1,
+              fontFamily: "'Playfair Display', serif",
+              fontSize: '15px', fontWeight: '600', color: C.pine,
+              background: 'transparent', border: 'none',
+              borderBottom: `1.5px solid ${C.sage}`, borderRadius: 0, padding: '2px 6px',
+            }}
+          />
+          {!saved && (
+            <button onClick={saveStreet} style={{
+              background: C.pine, color: '#fff', border: 'none',
+              borderRadius: '6px', padding: '5px 12px', cursor: 'pointer',
+              fontSize: '12px', fontFamily: "'Lato', sans-serif", fontWeight: '700',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}>
+              Save
+            </button>
+          )}
+          {saved && street && (
+            <span style={{ fontSize: '11px', color: C.sage, whiteSpace: 'nowrap' }}>✓ Saved</span>
+          )}
+          <button onClick={() => setOpen(o => !o)} style={iconBtn()}>
+            <ChevronIcon open={open} />
+          </button>
+          <button onClick={onRemove} style={iconBtn({ color: C.red })} title="Remove address">
+            <TrashIcon />
+          </button>
+        </div>
       </div>
 
       {/* Residents */}
@@ -249,16 +242,13 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
               ))}
             </div>
           )}
-
           {residents.map(r => (
             <ResidentRow
               key={r.id}
               resident={r}
-              onChange={val => updateResident(r.id, val)}
               onRemove={() => removeResident(r.id)}
             />
           ))}
-
           <button onClick={addResident} style={{
             marginTop: '10px', display: 'flex', alignItems: 'center', gap: '7px',
             background: 'none', border: `1.5px dashed ${C.sage}`, borderRadius: '8px',
@@ -276,7 +266,6 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
   )
 }
 
-// ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [unlocked, setUnlocked] = useState(!!sessionStorage.getItem('wef-auth'))
   const [addresses, setAddresses] = useState([])
@@ -293,28 +282,22 @@ export default function App() {
     setError(null)
     try {
       const { data: addrs, error: e1 } = await supabase
-        .from('addresses')
-        .select('*')
+        .from('addresses').select('*')
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true })
-
       if (e1) throw e1
 
       const { data: res, error: e2 } = await supabase
-        .from('residents')
-        .select('*')
+        .from('residents').select('*')
         .order('created_at', { ascending: true })
-
       if (e2) throw e2
 
-      const merged = (addrs || []).map(a => ({
+      setAddresses((addrs || []).map(a => ({
         ...a,
         residents: (res || []).filter(r => r.address_id === a.id),
-      }))
-      setAddresses(merged)
+      })))
     } catch (err) {
       setError('Could not load directory. Check your Supabase connection.')
-      console.error(err)
     }
     setLoading(false)
   }
@@ -323,11 +306,8 @@ export default function App() {
     const { data, error } = await supabase
       .from('addresses')
       .insert({ street: '', sort_order: addresses.length })
-      .select()
-      .single()
-    if (!error && data) {
-      setAddresses(prev => [...prev, { ...data, residents: [] }])
-    }
+      .select().single()
+    if (!error && data) setAddresses(prev => [...prev, { ...data, residents: [] }])
   }
 
   const removeAddress = async (id) => {
@@ -348,18 +328,15 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
-      {/* ── Header ── */}
       <header style={{
         background: C.pine, padding: '32px 24px 26px',
         textAlign: 'center', position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -30, left: -30, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
         <div style={{ position: 'absolute', bottom: -20, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
-
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '10px', marginBottom: '12px' }}>
           <TreeIcon size={36} /><TreeIcon size={50} /><TreeIcon size={36} />
         </div>
-
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
           fontSize: 'clamp(22px, 5vw, 36px)',
@@ -369,7 +346,6 @@ export default function App() {
         }}>
           Woodlands at Echo Farms
         </h1>
-
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginTop: '10px' }}>
           <div style={{ height: '1px', width: '44px', background: C.gold, opacity: 0.6 }} />
           <p style={{ color: C.gold, margin: 0, fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
@@ -377,22 +353,16 @@ export default function App() {
           </p>
           <div style={{ height: '1px', width: '44px', background: C.gold, opacity: 0.6 }} />
         </div>
-
         <button onClick={logout} style={{
           position: 'absolute', top: '14px', right: '16px',
           background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
           color: 'rgba(255,255,255,0.7)', borderRadius: '8px',
           padding: '5px 12px', fontSize: '11px', cursor: 'pointer',
           fontFamily: "'Lato', sans-serif", letterSpacing: '0.05em',
-        }}>
-          Lock
-        </button>
+        }}>Lock</button>
       </header>
 
-      {/* ── Body ── */}
       <main style={{ maxWidth: '800px', margin: '0 auto', padding: '30px 16px 80px' }}>
-
-        {/* Toolbar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
           <p style={{ color: C.sage, fontSize: '13px', margin: 0, fontStyle: 'italic' }}>
             {loading ? 'Loading…' : `${addresses.length} address${addresses.length !== 1 ? 'es' : ''} listed`}
@@ -412,7 +382,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Error */}
         {error && (
           <div style={{
             background: '#fdf2f2', border: `1.5px solid ${C.red}`, borderRadius: '10px',
@@ -427,17 +396,13 @@ export default function App() {
           </div>
         )}
 
-        {/* Loading skeleton */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: C.sage, opacity: 0.5 }}>
             <TreeIcon size={44} />
-            <p style={{ fontFamily: "'Playfair Display', serif", marginTop: '14px', fontSize: '17px' }}>
-              Loading directory…
-            </p>
+            <p style={{ fontFamily: "'Playfair Display', serif", marginTop: '14px', fontSize: '17px' }}>Loading directory…</p>
           </div>
         )}
 
-        {/* Address cards */}
         {!loading && addresses.map(addr => (
           <AddressCard
             key={addr.id}
@@ -447,7 +412,6 @@ export default function App() {
           />
         ))}
 
-        {/* Empty state */}
         {!loading && addresses.length === 0 && !error && (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: C.sage, opacity: 0.55 }}>
             <TreeIcon size={48} />
@@ -457,10 +421,7 @@ export default function App() {
           </div>
         )}
 
-        <p style={{
-          textAlign: 'center', marginTop: '48px', fontSize: '11px',
-          color: '#bbb', letterSpacing: '0.08em', fontStyle: 'italic',
-        }}>
+        <p style={{ textAlign: 'center', marginTop: '48px', fontSize: '11px', color: '#bbb', letterSpacing: '0.08em', fontStyle: 'italic' }}>
           This directory is voluntary. Information is shared at residents' discretion.
         </p>
       </main>
