@@ -305,9 +305,11 @@ export default function App() {
   }
 
   const addAddress = async () => {
+    const street = window.prompt('Enter the street address:')
+    if (!street || !street.trim()) return
     const { data, error } = await supabase
       .from('addresses')
-      .insert({ street: '', sort_order: addresses.length })
+      .insert({ street: street.trim(), sort_order: addresses.length })
       .select().single()
     if (!error && data) setAddresses(prev => [...prev, { ...data, residents: [] }])
   }
