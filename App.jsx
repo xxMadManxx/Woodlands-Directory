@@ -69,7 +69,7 @@ function PasswordGate({ onUnlock }) {
   const [shaking, setShaking] = useState(false)
 
   const attempt = () => {
-    const editPassword = import.meta.env.VITE_EDIT_PASSWORD || 'WoodlandsEchoFarms
+   const editPassword = import.meta.env.VITE_EDIT_PASSWORD || 'WoodlandEchoFarms'
       '
     if (pw === editPassword) {
       sessionStorage.setItem('wef-auth', '1')
