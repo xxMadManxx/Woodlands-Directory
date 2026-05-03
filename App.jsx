@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase.js'
 
 const C = {
@@ -149,15 +149,17 @@ function AddressCard({ address, onRemove, onResidentsChange }) {
   const [open, setOpen] = useState(true)
   const [residents, setResidents] = useState(address.residents || [])
   const [street, setStreet] = useState(address.street || '')
+  const streetRef = useRef(address.street || '')
   const [saved, setSaved] = useState(true)
 
   const handleStreetChange = (val) => {
     setStreet(val)
+    streetRef.current = val
     setSaved(false)
   }
 
   const saveStreet = async () => {
-    const { error } = await supabase.from('addresses').update({ street }).eq('id', address.id)
+    const { error } = await supabase.from('addresses').update({ street: streetRef.current }).eq('id', address.id)
     if (!error) setSaved(true)
   }
 
